@@ -1,0 +1,63 @@
+spring:
+  application:
+    name: video-download-service
+
+server:
+  port: ${SERVER_PORT:8086}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: always
+
+app:
+  storage:
+    type: ${APP_STORAGE_TYPE:local-test}
+    s3:
+      bucket: ${S3_BUCKET:fiap-video-uploads}
+  presign:
+    ttl-minutes: ${PRESIGN_TTL_MINUTES:15}
+
+auth:
+  lambda:
+    url: ${AUTH_LAMBDA_URL:}
+
+aws:
+  region: ${AWS_REGION:us-east-1}
+  access-key-id: ${AWS_ACCESS_KEY_ID:test}
+  secret-access-key: ${AWS_SECRET_ACCESS_KEY:test}
+  endpoint-override: ${AWS_ENDPOINT_OVERRIDE:}
+
+logging:
+  level:
+    br.com.fiap: INFO
+    org.springframework: WARN
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+
+app:
+  storage:
+    type: local-test
+
+---
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+app:
+  storage:
+    type: s3
+
+aws:
+  endpoint-override: ${AWS_ENDPOINT_OVERRIDE:http://fiap-localstack:4566}

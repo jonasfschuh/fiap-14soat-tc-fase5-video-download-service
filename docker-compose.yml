@@ -1,0 +1,35 @@
+version: '3.8'
+name: ms-video-download
+
+services:
+  video-download-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: video-download-api
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SERVER_PORT: 8086
+      APP_STORAGE_TYPE: s3
+      S3_BUCKET: fiap-video-uploads
+      PRESIGN_TTL_MINUTES: 15
+      AWS_ENDPOINT_OVERRIDE: http://fiap-localstack:4566
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AUTH_LAMBDA_URL: ${AUTH_LAMBDA_URL:-}
+      NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
+      NEW_RELIC_APP_NAME: video-download-ms-local
+    ports:
+      - "8086:8086"
+    networks:
+      - app-network
+      - fiap-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+  fiap-network:
+    external: true
+    name: fiap-network
