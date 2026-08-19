@@ -3,9 +3,6 @@
 ![Java 21](https://img.shields.io/badge/Java_21-%23ED8B00.svg?style=for-the-badge&logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot_3.4.5-%236DB33F.svg?style=for-the-badge&logo=springboot&logoColor=white)
 ![Swagger](https://img.shields.io/badge/OpenAPI_3-%2385EA2D.svg?style=for-the-badge&logo=swagger&logoColor=black)
-![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?style=for-the-badge&logo=amazonwebservices&logoColor=white)
-![Amazon S3](https://img.shields.io/badge/Amazon_S3-%23569A31.svg?style=for-the-badge&logo=amazons3&logoColor=white)
-![LocalStack](https://img.shields.io/badge/LocalStack-%23000000.svg?style=for-the-badge&logo=localstack&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-%230db7ed.svg?style=for-the-badge&logo=docker&logoColor=white)
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-%23326CE5.svg?style=for-the-badge&logo=kubernetes&logoColor=white)
 ![New Relic](https://img.shields.io/badge/New_Relic-%231CE783.svg?style=for-the-badge&logo=newrelic&logoColor=white)
@@ -47,19 +44,19 @@
 
 ## 📋 Descrição
 
-Este repositório contém o **microserviço Video Download** da plataforma **FIAP X** — responsável por gerar **presigned URLs do Amazon S3** para download do arquivo ZIP de frames processados. Valida a propriedade (*ownership*) do vídeo pelo `userId` via estrutura da S3 key, sem consultar banco de dados.
+Este repositório contém o **microserviço Video Download** da plataforma **FIAP X** — responsável pelo download do arquivo ZIP de frames processados. Valida a propriedade (*ownership*) do vídeo pelo `userId`, lê o arquivo do armazenamento local (volume K8s compartilhado) e o serve como download direto.
 
 A aplicação é desenvolvida em **Spring Boot 3 (Java 21)** com arquitetura hexagonal (Ports & Adapters / Clean Architecture).
 
-> ⚠️ **Serviço 100% stateless:** não possui banco de dados, não consome nem publica em filas SQS. Depende do LocalStack provido pelo repositório `fiap-14soat-tc-fase5-video-upload-service` via `fiap-network`.
+> ℹ️ **Serviço 100% stateless:** não possui banco de dados, não consome nem publica em filas. O armazenamento compartilhado é provisionado pelo [`fiap-14soat-tc-fase5-iac-terraform`](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-iac-terraform) via Kubernetes.
 
 ### Principais funcionalidades
 
 | Funcionalidade | Descrição |
 |----------------|-----------|
-| **Geração de Presigned URL** | Gera URL temporária (TTL 15 min) para download direto do ZIP no S3 |
-| **Validação de Ownership** | Valida se o `userId` do header é o dono do vídeo pela estrutura da S3 key |
-| **Verificação de Existência** | Usa `S3 HeadObject` para checar se o ZIP existe antes de gerar a URL |
+| **Download de ZIP** | Serve o arquivo ZIP de frames diretamente via `StreamingResponseBody` |
+| **Validação de Ownership** | Valida se o `userId` do header é o dono do vídeo pela estrutura do caminho do arquivo |
+| **Verificação de Existência** | Verifica se o ZIP existe no storage local antes de servir |
 | **Autenticação** | Proxy para o `auth-lambda` (login) — o `userId` é extraído do header `X-User-Id` injetado pelo API Gateway |
 
 ### Estrutura de Módulos Maven
@@ -68,7 +65,7 @@ A aplicação é desenvolvida em **Spring Boot 3 (Java 21)** com arquitetura hex
 fiap-14soat-tc-fase5-video-download-service/
 ├── application/      → Controllers REST, DTOs, mappers, exception handlers, testes BDD (Cucumber)
 ├── domain/           → Modelos, use cases, ports de entrada e saída, exceções de domínio
-├── infrastructure/   → Adapters S3, configurações AWS
+├── infrastructure/   → Adapters de armazenamento local, configurações
 └── report-aggregate/ → Agregador de cobertura JaCoCo (multi-módulo)
 ```
 
@@ -95,10 +92,10 @@ fiap-14soat-tc-fase5-video-download-service/
                           │  Output Ports
 ┌─────────────────────────▼──────────────────────────────────┐
 │                  Infrastructure Layer                       │
-│   S3PresignedUrlAdapter (HeadObject + S3Presigner)         │
-│   NoOpPresignStorageAdapter (testes)                        │
-│   AwsS3Configuration  │  DownloadBeanConfiguration         │
-│   RestTemplateConfiguration  │  SwaggerConfiguration       │
+│   LocalFileDownloadAdapter (verifica existência + lê arquivo)      │
+│   NoOpPresignStorageAdapter (testes)                                │
+│   DownloadBeanConfiguration  │  RestTemplateConfiguration          │
+│   SwaggerConfiguration                                              │
 └────────────────────────────────────────────────────────────┘
 ```
 
@@ -116,32 +113,31 @@ fiap-14soat-tc-fase5-video-download-service/
     │  extrai userId do header X-User-Id
     ▼
 [GenerateDownloadUrlUseCase]
-    │  constrói S3 key: outputs/{userId}/{videoId}/frames.zip
+    │  constrói path local: outputs/{userId}/{videoId}/frames.zip
     ├──► [VideoPresignStoragePort]
-    │        ├── S3PresignedUrlAdapter
-    │        │     ├── S3Client.headObject()   → verifica existência
-    │        │     └── S3Presigner.presignGetObject() → gera URL
+    │        ├── LocalFileDownloadAdapter
+    │        │     ├── Files.exists()            → verifica existência
+    │        │     └── StreamingResponseBody      → serve o arquivo
     │        └── NoOpPresignStorageAdapter  (profile: local-test)
     │
     ▼
-200 OK → { "presignedUrl": "https://...", "expiresInMinutes": 15 }
+200 OK → arquivo ZIP em streaming
 ou
 404 Not Found   ← ZIP não encontrado / userId incorreto
 ```
 
-### Infraestrutura Local (Docker Compose)
+### Infraestrutura Local (K8s + Docker Compose)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  fiap-network (bridge — compartilhada entre todos os serviços)   │
+│  Kubernetes (Docker Desktop) — namespace fiapx                   │
+│  provisionado pelo fiap-14soat-tc-fase5-iac-terraform            │
 │                                                                   │
-│  ┌───────────────────┐   ┌──────────────────┐                   │
-│  │  video-download   │   │   LocalStack *    │                   │
-│  │  :8086            │   │   :4566           │                   │
-│  │  (Spring Boot)    │   │   S3 + SQS + SNS  │                   │
-│  └───────────────────┘   └──────────────────┘                   │
-│                                                                   │
-│  * LocalStack provido pelo video-upload-service                  │
+│  ┌───────────────────┐   ┌────────────────────────────────┐      │
+│  │  video-download   │   │  PVC: fiapx-video-pvc           │      │
+│  │  :8086            │◄──│  /app/videos   (uploads)        │      │
+│  │  (Spring Boot)    │   │  /app/processed (ZIPs)         │      │
+│  └───────────────────┘   └────────────────────────────────┘      │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -155,15 +151,13 @@ ou
 |------------|--------|-----|
 | **Java** | 21 | Linguagem da aplicação |
 | **Spring Boot** | 3.4.5 | Framework principal |
-| **AWS SDK v2 S3** | 2.28.0 | S3Client (HeadObject) + S3Presigner |
 | **Swagger / OpenAPI** | 3.x | Documentação interativa da API |
 
 ### Storage
 
 | Tecnologia | Ambiente | Uso |
 |------------|----------|-----|
-| **Amazon S3** | AWS | Leitura dos ZIPs processados e geração de presigned URL |
-| **LocalStack** | Local/Docker | Emulação de S3 (provido pelo video-upload-service) |
+| **Armazenamento local** | Local K8s / Prod | Leitura dos ZIPs processados (PVC `fiapx-video-pvc`) |
 
 ### Testes
 
@@ -179,9 +173,8 @@ ou
 | Ferramenta | Versão | Uso |
 |------------|--------|-----|
 | **Docker** | 24.x | Containerização da aplicação |
-| **Docker Compose** | 2.x | Orquestração local (conecta à fiap-network) |
-| **Kubernetes** | Latest | Orquestração em produção (EKS) |
-| **Terraform** | Latest | IaC AWS (repositório iac-terraform) |
+| **Docker Compose** | 2.x | Orquestração local |
+| **Kubernetes** | Latest | Orquestração com volume compartilhado (PVC) |
 | **Maven** | 3.9+ | Build e gerenciamento de dependências |
 | **New Relic** | 8.x | APM / Observabilidade |
 | **GitHub Actions** | Latest | CI/CD |
@@ -221,24 +214,21 @@ As regras abaixo foram aplicadas em todos os repositórios da stack para atender
 
 - [Java 21+](https://adoptium.net/)
 - [Maven 3.9+](https://maven.apache.org/)
-- [Docker Desktop 4.25+](https://www.docker.com/products/docker-desktop/)
-- `fiap-14soat-tc-fase5-video-upload-service` rodando (provê LocalStack + S3 + `fiap-network`)
+- [Docker Desktop 4.25+](https://www.docker.com/products/docker-desktop/) com Kubernetes habilitado
+- **[`fiap-14soat-tc-fase5-iac-terraform`](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-iac-terraform) provisionado** (cria o PVC `fiapx-video-pvc`)
 
 ---
 
-### ⚙️ Configuração da rede Docker compartilhada
-
-Antes de subir qualquer serviço, crie a rede externa `fiap-network` (necessária uma única vez por máquina):
+### ⚙️ Pré-requisito: provisionar o iac-terraform
 
 ```bash
-docker network create fiap-network
+# No diretório do iac-terraform:
+bash scripts/setup-cluster.sh
 ```
 
 ---
 
 ### Opção A — Stack completa com Docker Compose *(recomendado)*
-
-> ⚠️ Certifique-se de que o `video-upload-service` está rodando primeiro (LocalStack + S3).
 
 ```bash
 # Build e start do serviço
@@ -255,7 +245,6 @@ docker compose up -d
 |---------|-----|-----------|
 | **API** | http://localhost:8086 | Video Download Service |
 | **Swagger UI** | http://localhost:8086/swagger-ui.html | Documentação interativa |
-| **LocalStack** | http://localhost:4566 | Emulação de S3 (via video-upload-service) |
 
 ```bash
 # Parar os containers
@@ -266,13 +255,7 @@ docker compose down
 
 ### Opção B — Aplicação rodando na IDE
 
-```bash
-# No repositório video-upload-service (provê LocalStack + fiap-network)
-cd ../fiap-14soat-tc-fase5-video-upload-service
-docker compose up -d localstack
-```
-
-Em seguida, execute a aplicação com o profile `local`:
+Execute a aplicação com o profile `local`:
 
 ```bash
 ./mvnw spring-boot:run -pl application \
@@ -282,14 +265,9 @@ Em seguida, execute a aplicação com o profile `local`:
 Ou use as variáveis de ambiente na IDE:
 
 ```
-SPRING_PROFILES_ACTIVE=docker
+SPRING_PROFILES_ACTIVE=local
 SERVER_PORT=8086
-APP_STORAGE_TYPE=s3
-S3_BUCKET=fiap-video-uploads
-AWS_ENDPOINT_OVERRIDE=http://localhost:4566
-AWS_REGION=us-east-1
-AWS_ACCESS_KEY_ID=test
-AWS_SECRET_ACCESS_KEY=test
+STORAGE_OUTPUT_PATH=/app/processed
 ```
 
 ---
@@ -299,13 +277,7 @@ AWS_SECRET_ACCESS_KEY=test
 | Variável | Padrão | Descrição |
 |----------|--------|-----------|
 | `SERVER_PORT` | `8086` | Porta da API |
-| `APP_STORAGE_TYPE` | `local-test` | `s3` em docker/prod, `local-test` em testes |
-| `S3_BUCKET` | `fiap-video-uploads` | Bucket S3 |
-| `PRESIGN_TTL_MINUTES` | `15` | Validade da presigned URL em minutos |
-| `AWS_ENDPOINT_OVERRIDE` | — | URL do LocalStack (ex.: `http://fiap-localstack:4566`) |
-| `AWS_REGION` | `us-east-1` | Região AWS |
-| `AWS_ACCESS_KEY_ID` | `test` | Access key |
-| `AWS_SECRET_ACCESS_KEY` | `test` | Secret key |
+| `STORAGE_OUTPUT_PATH` | `/app/processed` | Diretório onde os ZIPs processados estão armazenados |
 | `AUTH_LAMBDA_URL` | — | URL do auth-lambda |
 | `NEW_RELIC_LICENSE_KEY` | — | License key do New Relic |
 
@@ -317,7 +289,7 @@ AWS_SECRET_ACCESS_KEY=test
 # Compilar e empacotar
 mvn clean package -DskipTests
 
-# Executar (requer LocalStack rodando)
+# Executar
 java -jar application/target/video-download-application-*.jar \
   --spring.profiles.active=local
 ```
@@ -338,7 +310,7 @@ java -jar application/target/video-download-application-*.jar \
 | Método | Path | Auth | Descrição |
 |--------|------|------|-----------|
 | `POST` | `/auth/login` | ❌ | Proxy para auth-lambda (retorna JWT) |
-| `GET` | `/api/videos/{videoId}/download` | ✅ | Gera presigned URL para o ZIP de frames |
+| `GET` | `/api/videos/{videoId}/download` | ✅ | Faz download do ZIP de frames processados |
 | `GET` | `/actuator/health` | ❌ | Health check |
 
 > ✅ = requer header `X-User-Id` (injetado pelo API Gateway após validação JWT)
@@ -359,20 +331,14 @@ curl -X POST http://localhost:8086/auth/login \
 }
 ```
 
-### Exemplo — Gerar Presigned URL
+### Exemplo — Download do ZIP de Frames
 
 ```bash
-curl http://localhost:8086/api/videos/550e8400-e29b-41d4-a716-446655440000/download \
+curl -OJ http://localhost:8086/api/videos/550e8400-e29b-41d4-a716-446655440000/download \
   -H "X-User-Id: user-123"
 ```
 
-**Response 200 OK:**
-```json
-{
-  "presignedUrl": "https://fiap-video-uploads.s3.amazonaws.com/outputs/user-123/550e8400.../frames.zip?X-Amz-Expires=900&...",
-  "expiresInMinutes": 15
-}
-```
+**Response 200 OK:** arquivo `frames.zip` em streaming (`Content-Disposition: attachment`)
 
 **Response 404 Not Found** *(ZIP não encontrado ou userId incorreto):*
 ```json
@@ -383,13 +349,13 @@ curl http://localhost:8086/api/videos/550e8400-e29b-41d4-a716-446655440000/downl
 }
 ```
 
-### Estrutura da S3 Key
+### Estrutura do path local
 
 ```
 outputs/{userId}/{videoId}/frames.zip
 ```
 
-A presença desta key valida simultaneamente a **existência** do ZIP e a **propriedade** do usuário. Se o `userId` do header não corresponder ao da key, o `HeadObject` retornará `NoSuchKeyException` → `404`.
+A presença deste arquivo valida simultaneamente a **existência** do ZIP e a **propriedade** do usuário. Se o `userId` do header não corresponder ao do caminho, o arquivo não será encontrado → `404`.
 
 ---
 
@@ -448,14 +414,111 @@ start report-aggregate/target/site/jacoco-aggregate/index.html
 
 | Ordem | Repositório | Descrição |
 |-------|-------------|-----------|
-| 1 | [fiap-14soat-tc-fase5-iac-terraform](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-iac-terraform) | VPC, ECS/EKS, S3, SQS, RDS, Cognito — infraestrutura AWS |
+| 1 | [fiap-14soat-tc-fase5-iac-terraform](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-iac-terraform) | Kubernetes (Docker Desktop) — RabbitMQ, PostgreSQL, Prometheus, Grafana |
 | 2 | [fiap-14soat-tc-fase5-auth-lambda](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-auth-lambda) | Lambda Authorizer + Cognito + API Gateway |
-| 3 | [fiap-14soat-tc-fase5-video-upload-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-upload-service) | Upload + SQS publisher — **master do ambiente local** |
+| 3 | [fiap-14soat-tc-fase5-video-upload-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-upload-service) | Upload + publisher de eventos no RabbitMQ |
 | 4 | [fiap-14soat-tc-fase5-video-processing-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-processing-service) | Processa vídeo, extrai frames, gera ZIP |
 | 5 | [fiap-14soat-tc-fase5-video-status-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-status-service) | Status e metadados dos vídeos por usuário |
-| 6 | [fiap-14soat-tc-fase5-video-download-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-download-service) | **Este repositório** — Download do ZIP via presigned URL S3 |
+| 6 | [fiap-14soat-tc-fase5-video-download-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-download-service) | **Este repositório** — Download do ZIP de frames processados |
 | 7 | [fiap-14soat-tc-fase5-notification-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-notification-service) | Notificação por e-mail em caso de erro/conclusão |
 | 8 | [fiap-14soat-tc-fase5-observability](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-observability) | Prometheus + Grafana — dashboards e alertas |
+
+---
+
+## ⚙️ CI/CD — Configurando o Self-Hosted Runner
+
+O pipeline de deploy deste repositório utiliza um **GitHub Actions self-hosted runner** rodando na máquina local com acesso ao cluster Kubernetes (Docker Desktop).
+
+### Pré-requisitos do runner
+
+Certifique-se de que a máquina possui instalado:
+
+| Ferramenta | Versão mínima | Verificar |
+|-----------|---------------|-----------|
+| Docker Desktop (com K8s habilitado) | 4.x+ | `docker version` |
+| kubectl | 1.28+ | `kubectl version --client` |
+| Java 21 (JDK) | 21+ | `java -version` |
+| Maven Wrapper | — | `.\mvnw.cmd -version` |
+
+> Para o repositório IAC, também é necessário `terraform` (1.5+) e `helm` (3.x+).
+
+### Passo a passo — configurar o runner
+
+#### 1. Acesse as configurações do repositório no GitHub
+
+```
+GitHub → Repositório → Settings → Actions → Runners → New self-hosted runner
+```
+
+#### 2. Escolha o sistema operacional
+
+Selecione **Windows** e a arquitetura **x64**.
+
+#### 3. Baixe e configure o runner
+
+Execute os comandos exibidos pelo GitHub na sua máquina local (PowerShell como Administrador):
+
+```powershell
+# Criar pasta para o runner (ajuste o caminho se necessário)
+mkdir C:\actions-runner; cd C:\actions-runner
+
+# Baixar o runner (substitua a URL pela exibida no GitHub)
+Invoke-WebRequest -Uri https://github.com/actions/runner/releases/download/vX.X.X/actions-runner-win-x64-X.X.X.zip -OutFile actions-runner.zip
+
+# Extrair
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+[System.IO.Compression.ZipFile]::ExtractToDirectory("$PWD\actions-runner.zip", "$PWD")
+
+# Configurar (use o token gerado pelo GitHub na tela de configuração)
+.\config.cmd --url https://github.com/<org>/<repo> --token <TOKEN-GERADO-PELO-GITHUB>
+```
+
+#### 4. Instalar como serviço Windows (recomendado)
+
+```powershell
+# Instalar e iniciar como serviço Windows (executa automaticamente no boot)
+.\svc.cmd install
+.\svc.cmd start
+
+# Verificar status
+.\svc.cmd status
+```
+
+#### 5. Verificar o runner no GitHub
+
+```
+GitHub → Repositório → Settings → Actions → Runners
+```
+
+O runner deve aparecer com status **Idle** (verde). A partir daí, qualquer push para `main` ou `develop` disparará o pipeline de deploy automaticamente.
+
+### Verificar o deploy após o pipeline
+
+```powershell
+# Listar pods no namespace fiapx
+kubectl get pods -n fiapx
+
+# Verificar logs do serviço
+kubectl logs -l app=<nome-do-app> -n fiapx --tail=50
+
+# Acessar via Swagger (após NGINX Ingress estar ativo)
+# http://localhost/<caminho>/swagger-ui.html
+```
+
+### Gerenciar o runner
+
+```powershell
+# Parar o serviço
+.\svc.cmd stop
+
+# Remover o serviço
+.\svc.cmd uninstall
+
+# Remover o runner do GitHub
+.\config.cmd remove --token <TOKEN>
+```
+
+> 💡 **Dica:** Para múltiplos repositórios, crie uma pasta separada para cada runner (ex: `C:\actions-runner\auth`, `C:\actions-runner\upload`) e repita o processo para cada um.
 
 ---
 
