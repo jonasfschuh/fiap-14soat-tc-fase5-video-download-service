@@ -67,7 +67,7 @@ public class LocalFileDownloadAdapter implements VideoPresignStoragePort {
 
         String normalizedKey = storageKey.replace('\\', '/');
         String[] parts = normalizedKey.split("/");
-        if (parts.length >= 4 && "outputs".equals(parts[0]) && "frames.zip".equals(parts[parts.length - 1])) {
+        if (parts.length >= 4 && "outputs".equals(parts[0]) && parts[parts.length - 1].endsWith("_frames.zip")) {
             candidates.add(safeResolve(basePath, parts[1] + "/" + parts[2] + ".zip"));
         }
 

@@ -43,6 +43,6 @@ public class GenerateDownloadUrlUseCase implements GenerateDownloadUrlInputPort 
     }
 
     private String buildOutputKey(String userId, UUID videoId) {
-        return "outputs/" + userId + "/" + videoId + "/frames.zip";
+        return "outputs/" + userId + "/" + videoId + "/" + videoId + "_" + userId + "_frames.zip";
     }
 }

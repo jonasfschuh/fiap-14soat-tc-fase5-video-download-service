@@ -29,7 +29,7 @@ class GenerateDownloadUrlUseCaseTest {
     @Test
     void shouldGeneratePresignedUrlWhenZipExists() {
         UUID videoId = UUID.randomUUID();
-        String expectedKey = "outputs/user-1/" + videoId + "/frames.zip";
+        String expectedKey = "outputs/user-1/" + videoId + "/" + videoId + "_user-1_frames.zip";
 
         when(storagePort.objectExists(expectedKey)).thenReturn(true);
         when(storagePort.generatePresignedUrl(eq(expectedKey), eq(15L)))
@@ -63,7 +63,7 @@ class GenerateDownloadUrlUseCaseTest {
     @Test
     void shouldBuildCorrectS3KeyFromUserIdAndVideoId() {
         UUID videoId = UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
-        String expectedKey = "outputs/user-abc/550e8400-e29b-41d4-a716-446655440000/frames.zip";
+        String expectedKey = "outputs/user-abc/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440000_user-abc_frames.zip";
 
         when(storagePort.objectExists(expectedKey)).thenReturn(true);
         when(storagePort.generatePresignedUrl(eq(expectedKey), anyLong())).thenReturn("https://url");

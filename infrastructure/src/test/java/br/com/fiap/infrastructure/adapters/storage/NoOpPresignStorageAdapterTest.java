@@ -15,8 +15,8 @@ class NoOpPresignStorageAdapterTest {
 
     @Test
     void generatePresignedUrl_returnsStubUrl() {
-        String url = adapter.generatePresignedUrl("outputs/user/uuid/frames.zip", 15L);
+        String url = adapter.generatePresignedUrl("outputs/user/uuid/uuid_user_frames.zip", 15L);
         assertThat(url).contains("localhost:4566");
-        assertThat(url).contains("frames.zip");
+        assertThat(url).contains("_frames.zip");
     }
 }

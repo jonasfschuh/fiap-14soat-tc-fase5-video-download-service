@@ -42,7 +42,7 @@ public class VideoDownloadController {
 
                 **Como usar a URL retornada:**
                 ```bash
-                curl -L "<url>" -o frames.zip
+                curl -L "<url>" -o {videoId}_{userId}_frames.zip
                 ```
                 """
     )

@@ -41,7 +41,7 @@ class LocalFileDownloadAdapterTest {
 
         LocalFileDownloadAdapter adapter = adapterWithPath(testRoot);
 
-        assertThat(adapter.objectExists("outputs/user-1/550e8400-e29b-41d4-a716-446655440000/frames.zip")).isTrue();
+        assertThat(adapter.objectExists("outputs/user-1/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440000_user-1_frames.zip")).isTrue();
     }
 
     @Test
@@ -52,7 +52,7 @@ class LocalFileDownloadAdapterTest {
 
         LocalFileDownloadAdapter adapter = adapterWithPath(testRoot);
 
-        String url = adapter.generatePresignedUrl("outputs/user-2/550e8400-e29b-41d4-a716-446655440000/frames.zip", 15L);
+        String url = adapter.generatePresignedUrl("outputs/user-2/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440000_user-2_frames.zip", 15L);
 
         assertThat(url).isEqualTo(zipPath.toAbsolutePath().normalize().toUri().toString());
     }
@@ -61,7 +61,7 @@ class LocalFileDownloadAdapterTest {
     void generatePresignedUrl_throwsWhenFileDoesNotExist() {
         LocalFileDownloadAdapter adapter = adapterWithPath(testRoot);
 
-        assertThatThrownBy(() -> adapter.generatePresignedUrl("outputs/user-3/550e8400-e29b-41d4-a716-446655440000/frames.zip", 15L))
+        assertThatThrownBy(() -> adapter.generatePresignedUrl("outputs/user-3/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440000_user-3_frames.zip", 15L))
                 .isInstanceOf(PresignedUrlGenerationException.class)
                 .hasCauseInstanceOf(java.nio.file.NoSuchFileException.class);
     }
