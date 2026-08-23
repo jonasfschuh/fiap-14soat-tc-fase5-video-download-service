@@ -52,7 +52,6 @@
                             <title>Video Download MS - Cobertura Agregada</title>
                             <excludes>
                                 <exclude>**/VideoDownloadApplication.class</exclude>
-                                <exclude>**/AwsS3Configuration.class</exclude>
                                 <exclude>**/SwaggerConfiguration.class</exclude>
                                 <exclude>**/RestTemplateConfiguration.class</exclude>
                                 <exclude>**/DownloadBeanConfiguration.class</exclude>

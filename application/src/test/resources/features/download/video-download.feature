@@ -19,6 +19,6 @@
     When a download URL request is made for videoId "770e8400-e29b-41d4-a716-446655440000" and userId "user-999"
     Then the response status should be 404
 
-  Scenario: Login without AUTH_LAMBDA_URL returns 503
-    When a login request is made without AUTH_LAMBDA_URL configured
+  Scenario: Login without AUTH_SERVICE_URL returns 503
+    When a login request is made without AUTH_SERVICE_URL configured
     Then the response status should be 503

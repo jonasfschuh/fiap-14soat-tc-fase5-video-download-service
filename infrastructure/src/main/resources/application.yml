@@ -3,7 +3,7 @@ spring:
     name: video-download-service
 
 server:
-  port: ${SERVER_PORT:8086}
+  port: ${SERVER_PORT:8085}
 
 management:
   endpoints:
@@ -18,21 +18,15 @@ management:
 
 app:
   storage:
-    type: ${APP_STORAGE_TYPE:local-test}
-    s3:
-      bucket: ${S3_BUCKET:fiap-video-uploads}
+    type: ${APP_STORAGE_TYPE:local}
+    local:
+      processed-path: ${STORAGE_OUTPUT_PATH:/app/videos/processed}
   presign:
     ttl-minutes: ${PRESIGN_TTL_MINUTES:15}
 
 auth:
-  lambda:
-    url: ${AUTH_LAMBDA_URL:}
-
-aws:
-  region: ${AWS_REGION:us-east-1}
-  access-key-id: ${AWS_ACCESS_KEY_ID:test}
-  secret-access-key: ${AWS_SECRET_ACCESS_KEY:test}
-  endpoint-override: ${AWS_ENDPOINT_OVERRIDE:}
+  service:
+    url: ${AUTH_SERVICE_URL:http://localhost:8090}
 
 logging:
   level:
@@ -57,7 +51,4 @@ spring:
 
 app:
   storage:
-    type: s3
-
-aws:
-  endpoint-override: ${AWS_ENDPOINT_OVERRIDE:http://fiap-localstack:4566}
+    type: local

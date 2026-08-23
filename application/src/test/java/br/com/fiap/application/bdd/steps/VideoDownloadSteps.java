@@ -84,8 +84,8 @@ public class VideoDownloadSteps {
         assertThat(response.getStatusCode().value()).isEqualTo(status);
     }
 
-    @When("a login request is made without AUTH_LAMBDA_URL configured")
-    public void aLoginRequestIsMadeWithoutAuthLambdaUrlConfigured() {
+    @When("a login request is made without AUTH_SERVICE_URL configured")
+    public void aLoginRequestIsMadeWithoutAuthServiceUrlConfigured() {
         AuthProxyController controller = new AuthProxyController(new RestTemplate());
         response = controller.login(new AuthLoginRequest("admin", "admin123"));
     }

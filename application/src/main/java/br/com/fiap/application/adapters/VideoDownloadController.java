@@ -21,7 +21,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/videos")
-@Tag(name = "Video Download", description = "Geração de presigned URL para download do ZIP de frames")
+@Tag(name = "Video Download", description = "Geração da URL de download do ZIP de frames")
 public class VideoDownloadController {
 
     private final GenerateDownloadUrlInputPort generateDownloadUrl;
@@ -34,13 +34,11 @@ public class VideoDownloadController {
     @Operation(
         summary = "Gerar URL de download do ZIP de frames",
         description = """
-                Gera uma presigned URL do S3 para download do arquivo ZIP contendo os frames extraídos do vídeo.
+                Gera a URL de download do arquivo ZIP contendo os frames extraídos do vídeo a partir do volume persistente local.
 
                 **Pré-requisitos:**
                 - O vídeo deve ter sido processado com sucesso (`status = DONE`)
                 - O `videoId` deve pertencer ao usuário identificado pelo header `X-User-Id`
-
-                **Validade da URL:** 15 minutos (configurável)
 
                 **Como usar a URL retornada:**
                 ```bash

@@ -42,23 +42,23 @@ class AuthProxyControllerTest {
     }
 
     @Test void login_withUrl_success_returnsOk() {
-        ReflectionTestUtils.setField(controller, "authLambdaUrl", "http://lambda.local");
-        mockServer.expect(requestTo("http://lambda.local/auth/login"))
+        ReflectionTestUtils.setField(controller, "authServiceUrl", "http://auth.local");
+        mockServer.expect(requestTo("http://auth.local/auth/login"))
                 .andRespond(withSuccess("{\"token\":\"jwt\"}", MediaType.APPLICATION_JSON));
         assertThat(controller.login(new AuthLoginRequest("admin","pass")).getStatusCode()).isEqualTo(HttpStatus.OK);
         mockServer.verify();
     }
 
     @Test void login_with401_returnsUnauthorized() {
-        ReflectionTestUtils.setField(controller, "authLambdaUrl", "http://lambda.local");
-        mockServer.expect(requestTo("http://lambda.local/auth/login")).andRespond(withUnauthorizedRequest());
+        ReflectionTestUtils.setField(controller, "authServiceUrl", "http://auth.local");
+        mockServer.expect(requestTo("http://auth.local/auth/login")).andRespond(withUnauthorizedRequest());
         assertThat(controller.login(new AuthLoginRequest("u","w")).getStatusCode().value()).isEqualTo(401);
         mockServer.verify();
     }
 
     @Test void login_withConnectionFailure_returns500() {
-        ReflectionTestUtils.setField(controller, "authLambdaUrl", "http://lambda.local");
-        mockServer.expect(requestTo("http://lambda.local/auth/login"))
+        ReflectionTestUtils.setField(controller, "authServiceUrl", "http://auth.local");
+        mockServer.expect(requestTo("http://auth.local/auth/login"))
                 .andRespond(withException(new IOException("refused")));
         assertThat(controller.login(new AuthLoginRequest("a","b")).getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         mockServer.verify();

@@ -16,15 +16,15 @@ docker-compose up --build -d
 
 echo.
 echo    Servicos iniciados:
-echo    - API:      http://localhost:8086
-echo    - Swagger:  http://localhost:8086/swagger-ui.html
-echo    - Actuator: http://localhost:8086/actuator/health
+echo    - API:      http://localhost:8085
+echo    - Swagger:  http://localhost:8085/swagger-ui.html
+echo    - Actuator: http://localhost:8085/actuator/health
 echo.
 echo    LocalStack (gerenciado pelo upload-service):
 echo    - LocalStack: http://localhost:4566
 echo    - StackPort:  http://localhost:8080
 echo.
 echo    Endpoint principal:
-echo    GET http://localhost:8086/api/videos/{videoId}/download
+echo    GET http://localhost:8085/api/videos/{videoId}/download
 echo    Header: X-User-Id: seu-user-id
 echo.

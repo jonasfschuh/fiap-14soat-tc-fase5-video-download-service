@@ -21,10 +21,10 @@ class DownloadBeanConfigurationTest {
     }
 
     @Test
-    void shouldCreateNoOpInputPort() {
+    void shouldCreateInputPort() {
         DownloadBeanConfiguration config = new DownloadBeanConfiguration();
         ReflectionTestUtils.setField(config, "ttlMinutes", 15L);
         VideoPresignStoragePort noOp = config.noOpPresignStoragePort();
-        assertThat(config.noOpGenerateDownloadUrlInputPort(noOp)).isNotNull();
+        assertThat(config.generateDownloadUrlInputPort(noOp)).isNotNull();
     }
 }

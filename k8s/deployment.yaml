@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: video-download-api
+  namespace: fiapx
+  labels:
+    app: video-download-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-download-api
+  template:
+    metadata:
+      labels:
+        app: video-download-api
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: "/actuator/prometheus"
+        prometheus.io/port: "8085"
+    spec:
+      containers:
+        - name: video-download-api
+          image: video-download-api:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SERVER_PORT
+              value: "8085"
+            - name: SPRING_PROFILES_ACTIVE
+              value: "docker"
+            - name: APP_STORAGE_TYPE
+              value: "local"
+            - name: STORAGE_OUTPUT_PATH
+              value: "/app/videos/processed"
+            - name: AUTH_SERVICE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: rabbitmq-config
+                  key: AUTH_SERVICE_URL
+            - name: PRESIGN_TTL_MINUTES
+              value: "15"
+          volumeMounts:
+            - name: video-storage
+              mountPath: /app/videos
+          startupProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 60
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8085
+            initialDelaySeconds: 0
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8085
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 6
+      volumes:
+        - name: video-storage
+          persistentVolumeClaim:
+            claimName: fiapx-video-pvc

@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: video-download-service
+  namespace: fiapx
+spec:
+  selector:
+    app: video-download-api
+  ports:
+    - port: 8085
+      targetPort: 8085
+  type: ClusterIP

@@ -9,19 +9,17 @@ services:
     container_name: video-download-api
     environment:
       SPRING_PROFILES_ACTIVE: docker
-      SERVER_PORT: 8086
-      APP_STORAGE_TYPE: s3
-      S3_BUCKET: fiap-video-uploads
+      SERVER_PORT: 8085
+      APP_STORAGE_TYPE: local
+      STORAGE_OUTPUT_PATH: /app/videos/processed
       PRESIGN_TTL_MINUTES: 15
-      AWS_ENDPOINT_OVERRIDE: http://fiap-localstack:4566
-      AWS_REGION: us-east-1
-      AWS_ACCESS_KEY_ID: test
-      AWS_SECRET_ACCESS_KEY: test
-      AUTH_LAMBDA_URL: ${AUTH_LAMBDA_URL:-}
+      AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-api:8090}
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
       NEW_RELIC_APP_NAME: video-download-ms-local
     ports:
-      - "8086:8086"
+      - "8085:8085"
+    volumes:
+      - ./videos/processed:/app/videos/processed
     networks:
       - app-network
       - fiap-network
