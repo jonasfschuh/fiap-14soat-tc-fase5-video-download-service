@@ -57,7 +57,7 @@ A aplicação é desenvolvida em **Spring Boot 3 (Java 21)** com arquitetura hex
 | **Download de ZIP** | Serve o arquivo ZIP de frames diretamente via `StreamingResponseBody` |
 | **Validação de Ownership** | Valida se o `userId` do header é o dono do vídeo pela estrutura do caminho do arquivo |
 | **Verificação de Existência** | Verifica se o ZIP existe no storage local antes de servir |
-| **Autenticação** | Proxy para o `auth-lambda` (login) — o `userId` é extraído do header `X-User-Id` injetado pelo API Gateway |
+| **Autenticação** | Proxy para o `auth` (login) — o `userId` é extraído do header `X-User-Id` injetado pelo API Gateway |
 
 ### Estrutura de Módulos Maven
 
@@ -106,7 +106,7 @@ fiap-14soat-tc-fase5-video-download-service/
     │  GET /api/videos/{videoId}/download
     │  Header: X-User-Id: {userId}
     ▼
-[API Gateway] ──── [auth-lambda] ← valida JWT, injeta X-User-Id
+[API Gateway] ──── [auth] ← valida JWT, injeta X-User-Id
     │
     ▼
 [VideoDownloadController]
@@ -278,7 +278,7 @@ STORAGE_OUTPUT_PATH=/app/processed
 |----------|--------|-----------|
 | `SERVER_PORT` | `8086` | Porta da API |
 | `STORAGE_OUTPUT_PATH` | `/app/processed` | Diretório onde os ZIPs processados estão armazenados |
-| `AUTH_LAMBDA_URL` | — | URL do auth-lambda |
+| `AUTH_URL` | — | URL do auth |
 | `NEW_RELIC_LICENSE_KEY` | — | License key do New Relic |
 
 ---
@@ -309,7 +309,7 @@ java -jar application/target/video-download-application-*.jar \
 
 | Método | Path | Auth | Descrição |
 |--------|------|------|-----------|
-| `POST` | `/auth/login` | ❌ | Proxy para auth-lambda (retorna JWT) |
+| `POST` | `/auth/login` | ❌ | Proxy para auth (retorna JWT) |
 | `GET` | `/api/videos/{videoId}/download` | ✅ | Faz download do ZIP de frames processados |
 | `GET` | `/actuator/health` | ❌ | Health check |
 
@@ -414,12 +414,12 @@ start report-aggregate/target/site/jacoco-aggregate/index.html
 
 | Ordem | Repositório | Descrição |
 |-------|-------------|-----------|
-| 1 | [fiap-14soat-tc-fase5-iac-terraform](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-iac-terraform) | Kubernetes (Docker Desktop) — RabbitMQ, PostgreSQL, Prometheus, Grafana |
-| 2 | [fiap-14soat-tc-fase5-auth-lambda](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-auth-lambda) | Lambda Authorizer + Cognito + API Gateway |
-| 3 | [fiap-14soat-tc-fase5-video-upload-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-upload-service) | Upload + publisher de eventos no RabbitMQ |
+| 1 | [fiap-14soat-tc-fase5-iac-terraform](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-iac-terraform) | Banco de dados, RabbitMQ — infraestrutura AWS |
+| 2 | [fiap-14soat-tc-fase5-auth](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-auth) | Login Authorizer            |
+| 3 | [fiap-14soat-tc-fase5-video-upload-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-upload-service) | Upload + RabbitMQ publisher |
 | 4 | [fiap-14soat-tc-fase5-video-processing-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-processing-service) | Processa vídeo, extrai frames, gera ZIP |
 | 5 | [fiap-14soat-tc-fase5-video-status-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-status-service) | Status e metadados dos vídeos por usuário |
-| 6 | [fiap-14soat-tc-fase5-video-download-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-download-service) | **Este repositório** — Download do ZIP de frames processados |
+| 6 | [fiap-14soat-tc-fase5-video-download-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-video-download-service) | Download do ZIP via presigned URL |
 | 7 | [fiap-14soat-tc-fase5-notification-service](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-notification-service) | Notificação por e-mail em caso de erro/conclusão |
 | 8 | [fiap-14soat-tc-fase5-observability](https://github.com/jonasfschuh/fiap-14soat-tc-fase5-observability) | Prometheus + Grafana — dashboards e alertas |
 

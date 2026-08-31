@@ -6,7 +6,7 @@ RUN ./mvnw clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 
-ARG NEW_RELIC_AGENT_VERSION=8.18.0
+ARG NEW_RELIC_AGENT_VERSION=8.25.0
 RUN apk add --no-cache curl \
     && mkdir -p /app/newrelic \
     && curl -sSL \
