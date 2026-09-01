@@ -58,7 +58,7 @@ public class AuthProxyController {
                     .body(Map.of("error", "AUTH_SERVICE_URL nao configurado. Adicione a configuracao no ambiente."));
         }
         try {
-            ResponseEntity<Object> response = restTemplate.postForEntity(authServiceUrl + "/auth/login", request, Object.class);
+            ResponseEntity<Object> response = restTemplate.postForEntity(authServiceUrl + "/login", request, Object.class);
             return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
         } catch (HttpStatusCodeException e) {
             log.warn("Erro ao chamar auth service: {} {}", e.getStatusCode(), e.getMessage());

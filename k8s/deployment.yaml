@@ -18,6 +18,7 @@ spec:
         prometheus.io/scrape: "true"
         prometheus.io/path: "/actuator/prometheus"
         prometheus.io/port: "8085"
+        prometheus.io/scheme: "http"
     spec:
       containers:
         - name: video-download-api
@@ -29,7 +30,9 @@ spec:
             - name: SERVER_PORT
               value: "8085"
             - name: SPRING_PROFILES_ACTIVE
-              value: "docker"
+              value: "k8s"
+            - name: SWAGGER_SERVER_URL
+              value: "/download"
             - name: APP_STORAGE_TYPE
               value: "local"
             - name: STORAGE_OUTPUT_PATH
@@ -44,6 +47,13 @@ spec:
           volumeMounts:
             - name: video-storage
               mountPath: /app/videos
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
           startupProbe:
             httpGet:
               path: /actuator/health

@@ -28,6 +28,10 @@ auth:
   service:
     url: ${AUTH_SERVICE_URL:http://localhost:8090}
 
+swagger:
+  server:
+    url: ${SWAGGER_SERVER_URL:/}
+
 logging:
   level:
     br.com.fiap: INFO
@@ -52,3 +56,20 @@ spring:
 app:
   storage:
     type: local
+
+---
+spring:
+  config:
+    activate:
+      on-profile: k8s
+
+# O ingress reescreve /download(/|$)(.*) -> /$2, entao o app recebe as
+# requisicoes sem o prefixo /download. O Swagger UI roda no browser e
+# precisa dos paths completos (com prefixo) para que o ingress roteie
+# corretamente as chamadas de api-docs/config feitas pelo JS da pagina.
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    config-url: /download/v3/api-docs/swagger-config
+    url: /download/v3/api-docs

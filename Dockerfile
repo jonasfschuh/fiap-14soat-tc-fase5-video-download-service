@@ -1,8 +1,11 @@
 FROM eclipse-temurin:21-jdk-alpine AS build
 WORKDIR /app
 COPY . .
-RUN chmod +x mvnw
-RUN ./mvnw clean package -DskipTests
+# 'sh mvnw' evita depender do shebang/bit executavel do mvnw, que pode ser
+# perdido em checkouts de runners Windows. O sed remove CR residual (CRLF)
+# que quebraria o script shell caso o arquivo tenha sido checked out com
+# quebras de linha do Windows.
+RUN sed -i 's/\r$//' mvnw && sh mvnw clean package -DskipTests
 
 FROM eclipse-temurin:21-jre-alpine
 
@@ -16,5 +19,5 @@ RUN apk add --no-cache curl \
 WORKDIR /app
 COPY --from=build /app/application/target/video-download-application-1.0.0-exec.jar app.jar
 COPY newrelic/newrelic.yml /app/newrelic/newrelic.yml
-EXPOSE 8086
+EXPOSE 8085
 ENTRYPOINT ["java", "-javaagent:/app/newrelic/newrelic.jar", "-Dnewrelic.config.file=/app/newrelic/newrelic.yml", "-jar", "app.jar"]
