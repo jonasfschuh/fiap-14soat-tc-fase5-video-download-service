@@ -4,6 +4,7 @@ spring:
 
 server:
   port: ${SERVER_PORT:8085}
+  forward-headers-strategy: framework
 
 management:
   endpoints:
@@ -15,6 +16,10 @@ management:
       probes:
         enabled: true
       show-details: always
+  metrics:
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
 
 app:
   storage:
@@ -23,6 +28,7 @@ app:
       processed-path: ${STORAGE_OUTPUT_PATH:/app/videos/processed}
   presign:
     ttl-minutes: ${PRESIGN_TTL_MINUTES:15}
+    secret: ${PRESIGN_SECRET:local-dev-insecure-secret-change-me}
 
 auth:
   service:

@@ -1,7 +1,9 @@
 package br.com.fiap.infrastructure.configuration;
 
+import br.com.fiap.domain.ports.in.DownloadVideoFileInputPort;
 import br.com.fiap.domain.ports.in.GenerateDownloadUrlInputPort;
 import br.com.fiap.domain.ports.out.VideoPresignStoragePort;
+import br.com.fiap.domain.usecases.DownloadVideoFileUseCase;
 import br.com.fiap.domain.usecases.GenerateDownloadUrlUseCase;
 import br.com.fiap.infrastructure.adapters.storage.NoOpPresignStorageAdapter;
 import org.springframework.beans.factory.annotation.Value;
@@ -18,6 +20,11 @@ public class DownloadBeanConfiguration {
     @Bean
     public GenerateDownloadUrlInputPort generateDownloadUrlInputPort(VideoPresignStoragePort storagePort) {
         return new GenerateDownloadUrlUseCase(storagePort, ttlMinutes);
+    }
+
+    @Bean
+    public DownloadVideoFileInputPort downloadVideoFileInputPort(VideoPresignStoragePort storagePort) {
+        return new DownloadVideoFileUseCase(storagePort);
     }
 
     @Bean

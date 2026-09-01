@@ -13,6 +13,7 @@ services:
       APP_STORAGE_TYPE: local
       STORAGE_OUTPUT_PATH: /app/videos/processed
       PRESIGN_TTL_MINUTES: 15
+      PRESIGN_SECRET: ${PRESIGN_SECRET:-local-dev-insecure-secret-change-me}
       AUTH_SERVICE_URL: ${AUTH_SERVICE_URL:-http://auth-api:8090}
       NEW_RELIC_LICENSE_KEY: ${NEW_RELIC_LICENSE_KEY:-}
       NEW_RELIC_APP_NAME: video-download-ms-local

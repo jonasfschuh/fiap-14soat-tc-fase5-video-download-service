@@ -5,6 +5,7 @@ import br.com.fiap.application.adapters.VideoDownloadController;
 import br.com.fiap.application.dtos.AuthLoginRequest;
 import br.com.fiap.domain.exceptions.VideoZipNotFoundException;
 import br.com.fiap.domain.model.PresignedUrlResult;
+import br.com.fiap.domain.ports.in.DownloadVideoFileInputPort;
 import br.com.fiap.domain.ports.in.GenerateDownloadUrlInputPort;
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
@@ -64,7 +65,7 @@ public class VideoDownloadSteps {
             );
         };
 
-        VideoDownloadController controller = new VideoDownloadController(stubUseCase);
+        VideoDownloadController controller = new VideoDownloadController(stubUseCase, (videoId, userId1, expires, sig) -> null);
         try {
             response = controller.generateDownloadUrl(this.videoId, userId);
         } catch (VideoZipNotFoundException ex) {

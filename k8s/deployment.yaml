@@ -44,6 +44,12 @@ spec:
                   key: AUTH_SERVICE_URL
             - name: PRESIGN_TTL_MINUTES
               value: "15"
+            - name: PRESIGN_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: rabbitmq-config
+                  key: PRESIGN_SECRET
+                  optional: true
           volumeMounts:
             - name: video-storage
               mountPath: /app/videos

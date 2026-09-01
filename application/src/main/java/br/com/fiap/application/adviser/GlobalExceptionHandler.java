@@ -1,5 +1,6 @@
 package br.com.fiap.application.adviser;
 
+import br.com.fiap.domain.exceptions.PresignedUrlAccessDeniedException;
 import br.com.fiap.domain.exceptions.PresignedUrlGenerationException;
 import br.com.fiap.domain.exceptions.VideoZipNotFoundException;
 import org.slf4j.Logger;
@@ -21,6 +22,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(VideoZipNotFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNotFound(VideoZipNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorBody(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(PresignedUrlAccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDenied(PresignedUrlAccessDeniedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorBody(403, ex.getMessage()));
     }
 
     @ExceptionHandler(PresignedUrlGenerationException.class)

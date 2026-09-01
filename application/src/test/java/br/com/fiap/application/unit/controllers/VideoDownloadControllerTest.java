@@ -3,6 +3,7 @@ package br.com.fiap.application.unit.controllers;
 import br.com.fiap.application.adapters.VideoDownloadController;
 import br.com.fiap.domain.exceptions.VideoZipNotFoundException;
 import br.com.fiap.domain.model.PresignedUrlResult;
+import br.com.fiap.domain.ports.in.DownloadVideoFileInputPort;
 import br.com.fiap.domain.ports.in.GenerateDownloadUrlInputPort;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
 class VideoDownloadControllerTest {
 
     @Mock GenerateDownloadUrlInputPort generateDownloadUrl;
+    @Mock DownloadVideoFileInputPort downloadVideoFile;
 
     @Test
     void shouldReturn200WithPresignedUrl() {
@@ -34,7 +36,7 @@ class VideoDownloadControllerTest {
         );
         when(generateDownloadUrl.generateDownloadUrl(videoId, "user-1")).thenReturn(result);
 
-        VideoDownloadController controller = new VideoDownloadController(generateDownloadUrl);
+        VideoDownloadController controller = new VideoDownloadController(generateDownloadUrl, downloadVideoFile);
         ResponseEntity<?> response = controller.generateDownloadUrl(videoId, "user-1");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
@@ -47,7 +49,7 @@ class VideoDownloadControllerTest {
         when(generateDownloadUrl.generateDownloadUrl(videoId, "user-1"))
                 .thenThrow(new VideoZipNotFoundException(videoId, "user-1"));
 
-        VideoDownloadController controller = new VideoDownloadController(generateDownloadUrl);
+        VideoDownloadController controller = new VideoDownloadController(generateDownloadUrl, downloadVideoFile);
 
         assertThatThrownBy(() -> controller.generateDownloadUrl(videoId, "user-1"))
                 .isInstanceOf(VideoZipNotFoundException.class);
