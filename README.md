@@ -103,8 +103,8 @@ fiap-14soat-tc-fase5-video-download-service/
 
 ```
 [Usuário]
-    │  GET /api/videos/{videoId}/download
-    │  Header: X-User-Id: {userId}
+    │  1) GET /api/videos/{videoId}/download
+    │     Header: X-User-Id: {userId}
     ▼
 [API Gateway] ──── [auth] ← valida JWT, injeta X-User-Id
     │
@@ -116,14 +116,27 @@ fiap-14soat-tc-fase5-video-download-service/
     │  constrói path local: outputs/{userId}/{videoId}/frames.zip
     ├──► [VideoPresignStoragePort]
     │        ├── LocalFileDownloadAdapter
-    │        │     ├── Files.exists()            → verifica existência
-    │        │     └── StreamingResponseBody      → serve o arquivo
+    │        │     ├── Files.exists()          → verifica existência
+    │        │     └── gera link HTTP assinado (HMAC + TTL) para /download/file
     │        └── NoOpPresignStorageAdapter  (profile: local-test)
     │
     ▼
-200 OK → arquivo ZIP em streaming
+200 OK → { "url": "http://.../api/videos/{id}/download/file?userId=...&expires=...&sig=..." }
 ou
 404 Not Found   ← ZIP não encontrado / userId incorreto
+
+    │  2) Usuário acessa a URL retornada (ex.: cola no navegador)
+    ▼
+[VideoDownloadController] GET /api/videos/{videoId}/download/file?userId&expires&sig
+    ▼
+[DownloadVideoFileUseCase]
+    │  valida assinatura/expiração (DownloadLinkSigner) e existência do ZIP
+    ▼
+200 OK → arquivo ZIP em streaming (Content-Disposition: attachment)
+ou
+403 Forbidden   ← link expirado/inválido
+ou
+404 Not Found   ← ZIP não encontrado
 ```
 
 ### Infraestrutura Local (K8s + Docker Compose)
