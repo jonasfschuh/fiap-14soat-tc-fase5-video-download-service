@@ -34,6 +34,9 @@ public class LocalFileDownloadAdapter implements VideoPresignStoragePort {
     @Value("${app.storage.local.processed-path:/app/videos/processed}")
     private String processedPath;
 
+    @Value("${app.download.public-path-prefix:}")
+    private String publicPathPrefix;
+
     private final DownloadLinkSigner linkSigner;
 
     public LocalFileDownloadAdapter(DownloadLinkSigner linkSigner) {
@@ -61,6 +64,7 @@ public class LocalFileDownloadAdapter implements VideoPresignStoragePort {
             String signature = linkSigner.sign(storageKey, expiresEpochSeconds);
 
             String url = ServletUriComponentsBuilder.fromCurrentContextPath()
+                    .path(publicPathPrefix)
                     .path("/api/videos/{videoId}/download/file")
                     .queryParam("userId", userId)
                     .queryParam("expires", expiresEpochSeconds)

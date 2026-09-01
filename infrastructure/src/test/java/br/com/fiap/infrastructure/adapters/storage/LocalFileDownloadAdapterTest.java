@@ -118,11 +118,26 @@ class LocalFileDownloadAdapterTest {
         }
     }
 
+    @Test
+    void generatePresignedUrl_includesPublicPathPrefixWhenConfigured() throws IOException {
+        Path zipPath = testRoot.resolve(Path.of("user-6", "550e8400-e29b-41d4-a716-446655440000.zip"));
+        Files.createDirectories(zipPath.getParent());
+        Files.writeString(zipPath, "zip");
+
+        LocalFileDownloadAdapter adapter = adapterWithPath(testRoot);
+        ReflectionTestUtils.setField(adapter, "publicPathPrefix", "/download");
+
+        String url = adapter.generatePresignedUrl("outputs/user-6/550e8400-e29b-41d4-a716-446655440000/550e8400-e29b-41d4-a716-446655440000_user-6_frames.zip", 15L);
+
+        assertThat(url).startsWith("http://localhost:8085/download/api/videos/550e8400-e29b-41d4-a716-446655440000/download/file");
+    }
+
     private LocalFileDownloadAdapter adapterWithPath(Path rootPath) {
         DownloadLinkSigner signer = new DownloadLinkSigner();
         ReflectionTestUtils.setField(signer, "secret", "test-secret");
         LocalFileDownloadAdapter adapter = new LocalFileDownloadAdapter(signer);
         ReflectionTestUtils.setField(adapter, "processedPath", rootPath.toString());
+        ReflectionTestUtils.setField(adapter, "publicPathPrefix", "");
         return adapter;
     }
 

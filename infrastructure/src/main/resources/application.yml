@@ -29,6 +29,8 @@ app:
   presign:
     ttl-minutes: ${PRESIGN_TTL_MINUTES:15}
     secret: ${PRESIGN_SECRET:local-dev-insecure-secret-change-me}
+  download:
+    public-path-prefix: ${DOWNLOAD_PUBLIC_PATH_PREFIX:}
 
 auth:
   service:
@@ -73,6 +75,13 @@ spring:
 # requisicoes sem o prefixo /download. O Swagger UI roda no browser e
 # precisa dos paths completos (com prefixo) para que o ingress roteie
 # corretamente as chamadas de api-docs/config feitas pelo JS da pagina.
+# Pelo mesmo motivo, a URL de download presignada (que tambem e aberta
+# diretamente pelo navegador/curl do usuario, fora do cluster) precisa
+# ser montada com o prefixo /download.
+app:
+  download:
+    public-path-prefix: /download
+
 springdoc:
   api-docs:
     path: /v3/api-docs
