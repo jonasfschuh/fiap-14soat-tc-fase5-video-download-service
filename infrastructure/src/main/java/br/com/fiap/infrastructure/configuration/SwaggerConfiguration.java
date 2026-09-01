@@ -6,17 +6,11 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springdoc.core.customizers.OpenApiCustomizer;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.util.StringUtils;
 
 @Configuration
 public class SwaggerConfiguration {
-
-    @Value("${auth.service.url:}")
-    private String authServiceUrl = "";
 
     @Bean
     public OpenAPI customOpenAPI() {
@@ -47,19 +41,5 @@ public class SwaggerConfiguration {
                                 2. Copie o `token` da resposta
                                 3. Clique em **Authorize** (🔒) e informe: `Bearer <token>`
                                 """));
-    }
-
-    @Bean
-    public OpenApiCustomizer authLoginServerOverride() {
-        return openApi -> {
-            if (!StringUtils.hasText(authServiceUrl)) return;
-            if (openApi.getPaths() == null) return;
-            var authPath = openApi.getPaths().get("/auth/login");
-            if (authPath != null) {
-                authPath.servers(java.util.List.of(
-                        new Server().url(authServiceUrl).description("Auth Service")
-                ));
-            }
-        };
     }
 }
